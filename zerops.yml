@@ -1,0 +1,37 @@
+app:
+  build:
+    base: [ nodejs@14 ]
+    build:
+      
+    deploy: [ 'dist/recipe-angular-app/~/' ]
+    cache: [ node_modules ]
+  run:
+    envReplace:
+      target: [ '.' ]
+      delimiter: [ '%%' ]
+
+# hostname of your service
+# (supports monorepositories! just add
+# one service section after the other)
+wiki:
+  # ==== how to build your application ====
+  build:
+  
+    base: [ nodejs@16 ]
+    build:
+      - yarn install --frozen-lockfile
+      - yarn build
+      - yarn sequelize db:create --env=production-ssl-disabled
+      - yarn sequelize db:migrate --env=production-ssl-disabled
+
+    # select which files / folders to deploy
+    # after the build succesfully finished
+    deploy: [ . ]
+
+    # *optional*: which files / folders
+    # to cache for the next use
+    cache: [ node_modules ]
+
+  # ==== how to run your application ====
+  run:
+    start: yarn start
