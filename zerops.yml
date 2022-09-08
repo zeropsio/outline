@@ -9,7 +9,7 @@ wiki:
     build:
       - yarn install --frozen-lockfile && echo frozen-install
       - yarn build
-      - yarn sequelize db:create --env=production-ssl-disabled
+      - yarn sequelize db:create --env=production-ssl-disabled || true #skip creating db if already created
       - yarn sequelize db:migrate --env=production-ssl-disabled
 
     # select which files / folders to deploy
