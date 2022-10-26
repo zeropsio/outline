@@ -1,14 +1,10 @@
 import env from "@server/env";
 import TeamDomain from "@server/models/TeamDomain";
 import { buildTeam, buildUser } from "@server/test/factories";
-import { getTestDatabase } from "@server/test/support";
+import { setupTestDatabase } from "@server/test/support";
 import teamProvisioner from "./teamProvisioner";
 
-const db = getTestDatabase();
-
-afterAll(db.disconnect);
-
-beforeEach(db.flush);
+setupTestDatabase();
 
 describe("teamProvisioner", () => {
   const ip = "127.0.0.1";
@@ -39,6 +35,7 @@ describe("teamProvisioner", () => {
     await buildTeam({
       subdomain: "myteam",
     });
+
     const result = await teamProvisioner({
       name: "Test team",
       subdomain: "myteam",
@@ -50,6 +47,7 @@ describe("teamProvisioner", () => {
       ip,
     });
 
+    expect(result.isNewTeam).toEqual(true);
     expect(result.team.subdomain).toEqual("myteam1");
   });
 

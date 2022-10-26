@@ -3,7 +3,7 @@ import { observer } from "mobx-react";
 import * as React from "react";
 import { Helmet } from "react-helmet";
 import { useTranslation } from "react-i18next";
-import { RouteComponentProps, useLocation } from "react-router-dom";
+import { RouteComponentProps, useLocation, Redirect } from "react-router-dom";
 import styled, { useTheme } from "styled-components";
 import { setCookie } from "tiny-cookie";
 import DocumentModel from "~/models/Document";
@@ -12,6 +12,7 @@ import ErrorOffline from "~/scenes/ErrorOffline";
 import Layout from "~/components/Layout";
 import Sidebar from "~/components/Sidebar/Shared";
 import Text from "~/components/Text";
+import usePolicy from "~/hooks/usePolicy";
 import useStores from "~/hooks/useStores";
 import { NavigationNode } from "~/types";
 import { AuthorizationError, OfflineError } from "~/utils/errors";
@@ -78,12 +79,17 @@ function SharedDocumentScene(props: Props) {
   const { ui } = useStores();
   const theme = useTheme();
   const location = useLocation();
+  const searchParams = React.useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search]
+  );
   const { t } = useTranslation();
   const [response, setResponse] = React.useState<Response>();
   const [error, setError] = React.useState<Error | null | undefined>();
   const { documents } = useStores();
   const { shareId, documentSlug } = props.match.params;
   const documentId = useDocumentId(documentSlug, response);
+  const can = usePolicy(response?.document.id ?? "");
 
   // ensure the wider page color always matches the theme
   React.useEffect(() => {
@@ -119,14 +125,14 @@ function SharedDocumentScene(props: Props) {
         <Login>
           {(config) =>
             config?.name && isCloudHosted ? (
-              <GetStarted>
+              <Content>
                 {t(
                   "{{ teamName }} is using Outline to share documents, please login to continue.",
                   {
                     teamName: config.name,
                   }
                 )}
-              </GetStarted>
+              </Content>
             ) : null
           }
         </Login>
@@ -138,6 +144,10 @@ function SharedDocumentScene(props: Props) {
 
   if (!response) {
     return <Loading location={props.location} />;
+  }
+
+  if (response && searchParams.get("edit") === "true" && can.update) {
+    return <Redirect to={response.document.url} />;
   }
 
   const sidebar = response.sharedTree ? (
@@ -165,7 +175,8 @@ function SharedDocumentScene(props: Props) {
   );
 }
 
-const GetStarted = styled(Text)`
+const Content = styled(Text)`
+  color: ${(props) => props.theme.textSecondary};
   text-align: center;
   margin-top: -8px;
 `;
